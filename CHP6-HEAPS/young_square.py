@@ -21,6 +21,7 @@ import numpy
 from sys import maxsize
 from collections import namedtuple
 from math import floor
+import random
 
 # the datastructure ------------------------------------------------------------------------------
 class Young_table:
@@ -60,6 +61,10 @@ class Young_table:
         pos_i , pos_j = self.position
 
         return ( pos_i == m -1 ) and ( pos_j == n - 1 )
+    
+    def clear( self ):
+        self.position = ( 0 , 0 )
+        self.mat = numpy.ones( self.shape , dtype = int )*maxsize
     
     def is_valid( self ):
 
@@ -144,16 +149,86 @@ class Young_table:
     def add( self , value ):
 
         if self.is_full():
-            raise ( "self IS FULL" )
+            raise Exception( "self IS FULL" )
         i , j = self.position
         self.increment_pos()
         self[ i , j ] = value
         self.push_up( i , j )
 
-if __name__ == "__main__":
-    
-    arr = [ 9 , 16 , 3 , 2 , 4 , 8 , 5 , 14 , 12 ]
-    T = Young_table( 4 , 4 )
-    for a in arr:
+    def pull_dowm( self , i , j ):
+
+        value = self[ i , j ]
+        m , n = self.shape 
+        while True:
+
+            try:
+                a = self[ i + 1, j ]
+            except IndexError: 
+                a = maxsize
+            
+            try:
+                b = self[ i , j + 1]
+            except IndexError:
+                b = maxsize
+
+            m_val = min( a , b , value )
+            if m_val == value: break
+
+            pos = [ i + 1, j ]
+            if m_val == b:
+                pos = [ i, j + 1 ] 
+            self[ pos ] , self[ i , j ] = self[ i , j ] , self[ pos ]
+            i , j = pos
+
+    def decrement_pos( self ):
+        _ , n = self.shape
+        i , j = self.position
+        pos = n*i + j - 1
+        self.position = ( pos//n , pos%n )
+
+    def pop( self ):
+
+        if self.position == ( 0 , 0 ):
+            raise Exception( "self is empty")
+        
+        self.decrement_pos()
+        i , j = self.position
+        self.increment_pos()
+
+        head = self[ 0 , 0 ]
+        last = self[ i , j ]
+        self[ 0 , 0 ] = last
+        self.mat[ i , j ] = maxsize
+
+        self.pull_dowm( 0 , 0 )
+        self.decrement_pos()
+        return head
+
+def test1():
+    T = Young_table( 8 , 7 )
+    for i in range( 1000 ):
+
+        if T.is_full():
+            print( T.is_valid() )
+            T.clear()
+
+        a = random.randint( 0 , 100 )
         T.add( a )
-    print( T.is_valid() )
+
+def test2():
+    T = Young_table( 20 , 20 )
+    for i in range( 399 ):
+        a = random.randint( 0 , 500 )
+        T.add( a )
+    
+    for x in range( 400 ):
+        try: T.pop()
+        except Exception: print("Yaaaaay, it works!")
+        if ( x + 1 )%10:
+            print( T.is_valid() )
+
+if __name__ == "__main__":
+    # test1()
+    test2()
+
+
